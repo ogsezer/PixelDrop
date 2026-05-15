@@ -9,8 +9,9 @@ let package = Package(
         .macOS(.v13)
     ],
     dependencies: [
-        // ImageViewerKit lives one directory up (sibling package)
-        .package(path: "../ImageViewerKit")
+        // Pull ImageViewerKit straight from GitHub so PixelDrop is self-contained.
+        // (Local sibling path is no longer used — anyone cloning the repo gets it.)
+        .package(url: "https://github.com/ogsezer/ImageViewerKit", from: "1.0.0")
     ],
     targets: [
         .executableTarget(
