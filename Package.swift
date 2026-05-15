@@ -18,10 +18,11 @@ let package = Package(
             dependencies: [
                 .product(name: "ImageViewerKit", package: "ImageViewerKit")
             ],
-            path: "Sources/PixelDrop",
-            swiftSettings: [
-                .enableExperimentalFeature("StrictConcurrency")
-            ]
+            path: "Sources/PixelDrop"
+            // StrictConcurrency intentionally omitted for the app target —
+            // NSItemProvider (ObjC) is not Sendable, which trips Swift 6
+            // sending-parameter checks. Strict concurrency lives in the
+            // framework (ImageViewerKit), not the demo app.
         )
     ]
 )
