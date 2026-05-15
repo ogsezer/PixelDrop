@@ -37,8 +37,10 @@ struct DropZoneView: View {
 
                     Image(systemName: isDragging ? "photo.fill.on.rectangle.fill" : "photo.on.rectangle")
                         .font(.system(size: 52, weight: .light))
-                        .foregroundStyle(.accent)
-                        .symbolEffect(.bounce, value: isDragging)
+                        .foregroundStyle(Color.accentColor)
+                        // .symbolEffect(.bounce) requires macOS 14+ — use scaleEffect spring instead
+                        .scaleEffect(isDragging ? 1.15 : 1.0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.45), value: isDragging)
                 }
 
                 // Text
