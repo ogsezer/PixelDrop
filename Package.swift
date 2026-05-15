@@ -11,7 +11,7 @@ let package = Package(
     dependencies: [
         // Pull ImageViewerKit straight from GitHub so PixelDrop is self-contained.
         // (Local sibling path is no longer used — anyone cloning the repo gets it.)
-        .package(url: "https://github.com/ogsezer/ImageViewerKit", from: "1.2.5")
+        .package(url: "https://github.com/ogsezer/ImageViewerKit", from: "1.2.6")
     ],
     targets: [
         .executableTarget(
