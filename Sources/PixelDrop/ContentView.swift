@@ -64,7 +64,7 @@ struct ContentView: View {
         ToolbarItem(placement: .navigation) {
             HStack(spacing: 6) {
                 Image(systemName: "photo.stack")
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(Color.accentColor)   // `.accent` ShapeStyle unavailable on macOS 13
                 Text("PixelDrop")
                     .fontWeight(.semibold)
             }
@@ -105,23 +105,20 @@ struct ContentView: View {
     // MARK: - Drop Handler
 
     private func handleDrop(providers: [NSItemProvider]) -> Bool {
-        var urls: [URL] = []
-        let group = DispatchGroup()
-
-        for provider in providers {
-            group.enter()
-            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier) { item, _ in
-                defer { group.leave() }
-                if let data = item as? Data,
-                   let url = URL(dataRepresentation: data, relativeTo: nil) {
-                    urls.append(url)
+        // Use structured concurrency — avoids mutating a captured var
+        // across concurrently-executing completion handlers.
+        Task { @MainActor in
+            var collected: [URL] = []
+            await withTaskGroup(of: URL?.self) { group in
+                for provider in providers {
+                    group.addTask { await provider.pixelDropFileURL() }
+                }
+                for await url in group {
+                    if let url { collected.append(url) }
                 }
             }
-        }
-
-        group.notify(queue: .main) {
-            let expanded = self.expandDirectories(urls)
-            if !expanded.isEmpty { self.open(urls: expanded) }
+            let expanded = expandDirectories(collected)
+            if !expanded.isEmpty { open(urls: expanded) }
         }
         return true
     }
@@ -168,5 +165,24 @@ struct ContentView: View {
             }
         }
         return result
+    }
+}
+
+// MARK: - NSItemProvider async helper
+
+private extension NSItemProvider {
+    /// Async wrapper around loadItem — safely bridges the callback into Swift concurrency.
+    /// Namespaced to `pixelDropFileURL` to avoid conflicts with other extensions.
+    func pixelDropFileURL() async -> URL? {
+        await withCheckedContinuation { continuation in
+            loadItem(forTypeIdentifier: UniformTypeIdentifiers.UTType.fileURL.identifier) { item, _ in
+                if let data = item as? Data,
+                   let url = URL(dataRepresentation: data, relativeTo: nil) {
+                    continuation.resume(returning: url)
+                } else {
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
     }
 }
